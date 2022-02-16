@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Runner
 {
@@ -7,12 +8,15 @@ namespace Runner
     {
         [SerializeField] private float _speed;
         [SerializeField] private float _jumpSpeed;
+        [SerializeField] private float _swipeSpeed;
         [SerializeField] private float _gravityForce;
         [SerializeField] private float _lineDistance;
         [SerializeField] private CharacterController _controller;
 
         private int _currentLine;
         private Vector3 _direction;
+
+        private const float Tolerance = 0.01f;
 
         public void Move(Vector2 swipeDirection)
         {
@@ -30,23 +34,29 @@ namespace Runner
 
         private void SwipeLine(bool isRight)
         {
-            var isMoved = false;
             if (isRight && _currentLine < 1)
             {
                 _currentLine++;
-                isMoved = true;
             }
-
             if (!isRight && _currentLine > -1)
             {
                 _currentLine--;
-                isMoved = true;
             }
+        }
 
-            if (!isMoved) return;
+        private void Update()
+        {
+            var targetPosition = Vector3.up * transform.position.y + Vector3.forward * transform.position.z;
+            targetPosition += new Vector3(_currentLine, 0, 0) * _lineDistance;
 
-            var moveTarget = isRight ? Vector3.right * _lineDistance : Vector3.left * _lineDistance;
-            _controller.Move(moveTarget);
+            if (Math.Abs(transform.position.x - targetPosition.x) < Tolerance) return;
+
+            var positionDifference = targetPosition - transform.position;
+            var moveDirection = positionDifference * _swipeSpeed * Time.deltaTime;
+            var target = moveDirection.sqrMagnitude < positionDifference.sqrMagnitude
+                ? moveDirection
+                : positionDifference;
+            _controller.Move(target);
         }
 
         private void Jump()

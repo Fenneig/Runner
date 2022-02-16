@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Runner.ObjectPool;
 using UnityEngine;
 
 namespace Runner
@@ -22,7 +23,7 @@ namespace Runner
 
             CalculateDeletePosition();
         }
-        //TODO: pool list 
+
         private void Update()
         {
             if (_playerTransform.position.z - _threshold > _deletePos)
@@ -35,14 +36,14 @@ namespace Runner
         private void SpawnTile()
         {
             var tilePrefab = _tilesPrefabs[Random.Range(0, _tilesPrefabs.Length)];
-            var newTile = Instantiate(tilePrefab, transform.forward * _spawnPos, Quaternion.identity);
+            var newTile = Pool.Instance.Get(tilePrefab, transform.forward * _spawnPos);
             _tileList.Add(newTile);
             _spawnPos += newTile.transform.localScale.z;
         }
 
         private void DeleteTile()
         {
-            Destroy(_tileList[0]);
+            _tileList[0].GetComponent<PoolItem>().Release();
             _tileList.RemoveAt(0);
             CalculateDeletePosition();
         }
