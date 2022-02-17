@@ -1,4 +1,5 @@
 ﻿using System;
+using Runner.Pause;
 using UnityEngine;
 
 namespace Runner
@@ -12,11 +13,28 @@ namespace Runner
         [SerializeField] private float _gravityForce;
         [SerializeField] private float _lineDistance;
         [SerializeField] private CharacterController _controller;
+        [SerializeField] private GameObject _losePanel;
 
         private int _currentLine;
         private Vector3 _direction;
 
         private const float Tolerance = 0.01f;
+        private const string Obstacle = "Obstacle";
+
+        private void Awake()
+        {
+            GameStateManager.OnGameStateChanged += OnGameStateChanged;
+        }
+
+        private void OnDestroy()
+        {
+            GameStateManager.OnGameStateChanged -= OnGameStateChanged;
+        }
+
+        private void OnGameStateChanged(GameState newGameState)
+        {
+            enabled = newGameState == GameState.Gameplay;
+        }
 
         public void Move(Vector2 swipeDirection)
         {
@@ -73,6 +91,13 @@ namespace Runner
             _direction.z = _speed;
             _direction.y += _gravityForce * Time.fixedDeltaTime;
             _controller.Move(_direction * Time.fixedDeltaTime);
+        }
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (!hit.gameObject.CompareTag(Obstacle)) return;
+            _losePanel.SetActive(true);
+            GameStateManager.SetState(GameState.End);
         }
     }
 }
